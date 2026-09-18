@@ -363,3 +363,7 @@ curl -k --resolve school.localhost:443:127.0.0.1 https://school.localhost/
 
 Этапы 4-9 описаны в [docs/plan.md](docs/plan.md): память, квалификация и лиды,
 передача человеку, кабинет, безопасность, деплой.
+
+## Лицензия
+
+MIT, см. [LICENSE](LICENSE).
