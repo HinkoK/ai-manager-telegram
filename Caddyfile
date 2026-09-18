@@ -1,0 +1,68 @@
+# TLS Caddy получает и продлевает сам. Домен берётся из CABINET_DOMAIN в .env.
+# Локальная проверка: CABINET_DOMAIN=school.localhost, тогда Caddy выпишет свой
+# внутренний сертификат и в интернет не полезет.
+{$CABINET_DOMAIN} {
+	encode zstd gzip
+
+	# Заголовки безопасности. HSTS Caddy сам не ставит, вопреки частому мнению,
+	# поэтому задаём явно. Локально проверяйте на 127.0.0.1: на IP браузеры HSTS
+	# не применяют, и он не прилипнет к localhost в других проектах.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# route, а не набор handle: внутри route правила выполняются в том порядке,
+	# в каком написаны. У handle порядок определяет Caddy, и проверка адреса
+	# могла бы оказаться после маршрутов.
+	route {
+		# Проверку от Let's Encrypt этот список не заденет: Caddy отвечает на
+		# неё сам, до маршрутов, и на порту 80, а не здесь.
+		# Кабинет виден только с адресов владельца: список в CABINET_ALLOWED_IPS
+		# через пробел. Домен публичный, и его находят сканеры за минуты.
+		@not_allowed not client_ip {$CABINET_ALLOWED_IPS}
+		handle @not_allowed {
+			respond "Доступ только с адресов владельца" 403
+		}
+
+		# Healthcheck наружу не отдаём: он для Docker, не для интернета.
+		handle /healthz {
+			respond 404
+		}
+
+		# Server Actions кабинет не использует вообще: все запросы к боту идут
+		# обычным fetch в /api. Через них эксплуатируется CVE-2025-55182 в Next, поэтому
+		# режем их на входе, не полагаясь на версию Next.
+		@server_action header Next-Action *
+		handle @server_action {
+			respond 404
+		}
+
+		# И любой POST мимо /api: постить в кабинет тоже нечего.
+		@post_to_cabinet {
+			method POST PUT PATCH DELETE
+			not path /api/*
+		}
+		handle @post_to_cabinet {
+			respond 405
+		}
+
+		# API бота. Кабинет и API на одном домене, поэтому cookie сессии работает
+		# без CORS, а проверка источника из этапа 8 видит настоящий домен.
+		handle /api/* {
+			reverse_proxy bot:8000
+		}
+
+		handle {
+			reverse_proxy cabinet:3000
+		}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

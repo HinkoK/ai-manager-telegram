@@ -1,0 +1,416 @@
+/* Визуальный слой кабинета по макету из ChatGPT. Три колонки: список разговоров,
+   переписка, панель клиента. Никаких UI-библиотек: обычный CSS. */
+
+:root {
+  --blue: #2563eb;
+  --blue-dark: #1d4ed8;
+  --blue-soft: #eff6ff;
+  --bot-bg: #f0f5ff;
+  --bot-line: #a7c1f7;
+  --client-bg: #f7f8fa;
+  --client-line: #d6dbe3;
+  --owner-bg: #e8f1fe;
+  --text: #111827;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --line-soft: #f1f3f6;
+  --amber: #f59e0b;
+  --radius: 10px;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* --- шапка ---------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  height: 56px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.topbar__nav {
+  display: flex;
+  gap: 24px;
+}
+
+.topbar__link {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  font-size: 15px;
+}
+
+.topbar__link--active {
+  color: var(--blue);
+  font-weight: 600;
+  border-bottom-color: var(--blue);
+}
+
+.topbar__counters {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* --- рабочая область ------------------------------------------------------ */
+
+.workspace {
+  display: grid;
+  grid-template-columns: 385px minmax(0, 1fr);
+  height: calc(100vh - 56px);
+}
+
+.sidebar {
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+}
+
+.filter {
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.filter--active {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #fff;
+  font-weight: 500;
+}
+
+.conv {
+  display: block;
+  padding: 13px 16px 15px;
+  border-bottom: 1px solid var(--line-soft);
+  cursor: pointer;
+}
+
+.conv--active {
+  background: var(--blue-soft);
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+.conv__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  flex: none;
+}
+
+.dot--unread {
+  background: var(--amber);
+}
+
+.dot--human {
+  background: var(--blue);
+}
+
+.conv__meta,
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.conv__preview {
+  margin-top: 2px;
+  color: #374151;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- переписка ------------------------------------------------------------ */
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.thread {
+  padding: 24px 32px 32px;
+  overflow-y: auto;
+}
+
+.thread__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.thread__head h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.thread__actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.thread__sub {
+  margin: 6px 0 20px;
+}
+
+.btn {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn--primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+  padding: 10px 22px;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--blue-dark);
+}
+
+.msg {
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--client-line);
+  border-radius: var(--radius);
+  background: var(--client-bg);
+}
+
+.msg--bot {
+  border-left-color: var(--bot-line);
+  background: var(--bot-bg);
+}
+
+.msg--owner {
+  border-left-color: var(--blue);
+  background: var(--owner-bg);
+}
+
+.msg__meta {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.system {
+  margin: 18px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.reply {
+  margin-top: 20px;
+}
+
+.reply textarea {
+  width: 100%;
+  min-height: 104px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  resize: vertical;
+}
+
+.reply__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+/* --- панель клиента ------------------------------------------------------- */
+
+.panel {
+  border-left: 1px solid var(--line);
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 19px;
+}
+
+.panel h2 + .rows {
+  margin-bottom: 28px;
+}
+
+.rows {
+  display: grid;
+  gap: 1px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.row__label {
+  color: var(--muted);
+}
+
+.row__value {
+  text-align: right;
+}
+
+.row__value--empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.summary {
+  margin: 0 0 24px;
+  color: #374151;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.card h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.field {
+  margin-top: 14px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.field select,
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+/* --- вход и пустые состояния ---------------------------------------------- */
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 24px;
+}
+
+.login {
+  width: 320px;
+}
+
+.login h1 {
+  margin: 0 0 20px;
+  font-size: 22px;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+}
+
+.error {
+  color: #b00020;
+  font-size: 14px;
+}
+
+.leads {
+  padding: 24px 32px;
+  max-width: 900px;
+}
+
+.lead-item {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}

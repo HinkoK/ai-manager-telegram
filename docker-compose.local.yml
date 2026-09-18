@@ -1,0 +1,52 @@
+# Локальный запуск: только эта машина, без домена, без TLS, без Caddy.
+#
+#   docker compose -f docker-compose.local.yml up -d --build
+#   docker compose -f docker-compose.local.yml logs -f bot
+#
+# Кабинет http://localhost:3000, API бота http://127.0.0.1:8000.
+# Порты привязаны к 127.0.0.1, а не к 0.0.0.0: иначе кабинет был бы виден всей
+# локальной сети, а на публичном Wi-Fi и не только ей.
+#
+# Прод-версия стека лежит в docker-compose.yml и поднимается вместе с Caddy.
+services:
+  bot:
+    build: ./bot
+    env_file: .env
+    environment:
+      # Здесь http, а Secure-cookie браузер по http не сохранит: без этого
+      # кабинет пустит на страницу входа и тут же вернёт обратно.
+      CABINET_COOKIE_SECURE: "false"
+      # Ссылки в карточках заявок и передач в Telegram ведут на локальный адрес.
+      # Открыть их можно только на этой машине, на телефоне они не работают.
+      # Этот же адрес нужен проверке источника из этапа 8: Next проксирует /api
+      # боту со своим Host, и совпасть Origin может только с cabinet_url.
+      CABINET_URL: http://localhost:3000
+    ports:
+      - "127.0.0.1:8000:8000"
+    # Telegram разрешает один открытый getUpdates на токен: второй экземпляр
+    # где угодно ещё получит 409.
+    stop_grace_period: 45s
+    restart: unless-stopped
+    volumes:
+      - ./knowledge:/knowledge:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  cabinet:
+    build: ./cabinet
+    # Образ собран с API_ORIGIN=http://bot:8000, поэтому /api кабинет проксирует
+    # боту сам, внутри сети compose. Caddy для этого не нужен.
+    depends_on:
+      bot:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

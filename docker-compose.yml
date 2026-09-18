@@ -1,0 +1,64 @@
+# Прод: бот, кабинет и Caddy. Наружу смотрит только Caddy, у бота и кабинета
+# портов на хосте нет вообще: до них можно достучаться лишь изнутри сети.
+#
+#   docker compose up -d --build
+#   docker compose logs -f bot
+services:
+  bot:
+    build: ./bot
+    env_file: .env
+    restart: always
+    # Telegram разрешает один открытый getUpdates на токен, поэтому экземпляр
+    # ровно один. Реплики здесь дадут 409, а не ускорение.
+    stop_grace_period: 45s
+    volumes:
+      # База знаний нужна команде загрузки внутри контейнера.
+      - ./knowledge:/knowledge:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  cabinet:
+    build: ./cabinet
+    restart: always
+    depends_on:
+      bot:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Домен кабинета. Для локальной проверки localhost: тогда Caddy выпишет
+      # внутренний сертификат и в Let's Encrypt не пойдёт.
+      CABINET_DOMAIN: ${CABINET_DOMAIN:-localhost}
+      # Адреса владельца через пробел. По умолчанию открыто всем: так локальная
+      # проверка работает без настройки, а на сервере список задаётся в .env.
+      CABINET_ALLOWED_IPS: ${CABINET_ALLOWED_IPS:-0.0.0.0/0 ::/0}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - bot
+      - cabinet
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  # Сертификаты переживают пересборку: иначе Let's Encrypt упрётся в лимит.
+  caddy_data:
+  caddy_config:

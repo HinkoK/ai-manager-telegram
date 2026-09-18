@@ -1,0 +1,13 @@
+.git
+.env
+.env.local
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.venv
+**/node_modules
+**/.next
+.DS_Store
+docs
+README.md
+CLAUDE.md
